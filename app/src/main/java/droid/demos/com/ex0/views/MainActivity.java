@@ -1,4 +1,4 @@
-package droid.demos.com.ex0;
+package droid.demos.com.ex0.views;
 
 import android.content.ContentUris;
 import android.content.Context;
@@ -14,6 +14,17 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
+
+import droid.demos.com.ex0.R;
+import droid.demos.com.ex0.models.ImageModel;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -26,10 +37,10 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         txvResult = (TextView) findViewById(R.id.txvResult);
         imgvResult = (ImageView) findViewById(R.id.imgvResult);
-        getImageFromAnotherApp();
+        getDataFromAnotherApp();
     }
 
-    private void getImageFromAnotherApp() {
+    private void getDataFromAnotherApp() {
         Intent intent = getIntent();
         String action = intent.getAction();
         String type = intent.getType();
@@ -41,6 +52,42 @@ public class MainActivity extends AppCompatActivity {
             if (type.startsWith("image/")) {
                 handleSendImage(intent);
             }
+        } else if (Intent.ACTION_SEND_MULTIPLE.equals(action) && type != null) {
+            if (type.startsWith("image/")) {
+                handleSendMultipleImages(intent);
+            } else {
+                Toast.makeText(MainActivity.this, "error, solo es posible seleccionar images, intente de nuevo", Toast.LENGTH_LONG).show();
+            }
+        } else {
+            // Handle other intents, such as being started from the home screen
+        }
+
+
+    }
+
+    private void handleSendMultipleImages(Intent intent) {
+        List<Uri> uriList = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM);
+        ArrayList<Uri> imageUris = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM);
+
+        if (imageUris != null && uriList != null) {
+            // Update UI to reflect multiple images being shared
+
+            //Create and fill imagesModel List
+            List<ImageModel> listImageModel = new ArrayList<>();
+            for (int i = 0; i < uriList.size(); i++) {
+                listImageModel.add(new ImageModel(uriList.get(i).toString()));
+            }
+
+            Intent intent1 = new Intent(this, ImagesActivity.class);
+
+            Gson gson = new Gson();
+            Type type = new TypeToken<List<ImageModel>>() {
+            }.getType();
+            String s = gson.toJson(listImageModel, type);
+            intent1.putExtra("LIST", s);
+
+            startActivity(intent1);
+
         }
 
     }
